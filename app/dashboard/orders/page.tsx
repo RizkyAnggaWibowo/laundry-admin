@@ -51,19 +51,44 @@ interface Order {
   }
 }
 
+interface ServiceType {
+  id: string
+  name: string
+  description: string | null
+  price_per_kg: number | null
+  price_per_item: number | null
+}
+
 export default function OrdersPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [paymentStatusFilter, setPaymentStatusFilter] = useState("all")
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [orders, setOrders] = useState<Order[]>([])
+  const [serviceTypes, setServiceTypes] = useState<ServiceType[]>([])
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
   const { toast } = useToast()
 
   useEffect(() => {
     fetchOrders()
+    fetchServiceTypes()
   }, [statusFilter, paymentStatusFilter, searchTerm])
+
+  const fetchServiceTypes = async () => {
+    try {
+      const { data, error } = await supabase.from("service_types").select("*")
+
+      if (error) {
+        console.warn("Error fetching service types:", error.message)
+        return
+      }
+
+      setServiceTypes(data || [])
+    } catch (err) {
+      console.warn("Failed to fetch service types:", err)
+    }
+  }
 
   const fetchOrders = async () => {
     try {
@@ -110,7 +135,12 @@ export default function OrdersPage() {
         const { data: plainOrders, error: plainErr } = await fallbackQuery
 
         if (plainErr) throw plainErr
-        data = plainOrders
+
+        // Manual join dengan service_types yang sudah di-fetch
+        data = plainOrders?.map((order) => ({
+          ...order,
+          service_types: serviceTypes.find((st) => st.id === order.service_type_id) || null,
+        }))
       }
 
       // Filter by search term (client-side)
@@ -135,6 +165,16 @@ export default function OrdersPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const getServiceName = (order: Order) => {
+    // Prioritas: dari join result, lalu dari manual lookup, terakhir fallback
+    if (order.service_types?.name) {
+      return order.service_types.name
+    }
+
+    const serviceType = serviceTypes.find((st) => st.id === order.service_type_id)
+    return serviceType?.name || "Unknown Service"
   }
 
   const getStatusBadge = (status: string) => {
@@ -418,7 +458,7 @@ export default function OrdersPage() {
                       <div className="text-sm text-muted-foreground">{order.customer_phone}</div>
                     </div>
                   </TableCell>
-                  <TableCell>{order.service_types?.name || "Unknown Service"}</TableCell>
+                  <TableCell>{getServiceName(order)}</TableCell>
                   <TableCell>{order.weight ? `${order.weight} kg` : "TBD"}</TableCell>
                   <TableCell>Rp {formatRupiah(order.total_amount)}</TableCell>
                   <TableCell>{getStatusBadge(order.status)}</TableCell>
@@ -471,7 +511,7 @@ export default function OrdersPage() {
                               <div className="grid grid-cols-3 gap-4">
                                 <div>
                                   <Label>Layanan</Label>
-                                  <p>{selectedOrder.service_types?.name || "Unknown Service"}</p>
+                                  <p>{getServiceName(selectedOrder)}</p>
                                 </div>
                                 <div>
                                   <Label>Tanggal Pickup</Label>
