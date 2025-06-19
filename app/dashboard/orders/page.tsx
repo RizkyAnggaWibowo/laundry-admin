@@ -179,28 +179,29 @@ export default function OrdersPage() {
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      pending: { color: "bg-yellow-100 text-yellow-800" },
-      confirmed: { color: "bg-blue-100 text-blue-800" },
-      "in-progress": { color: "bg-purple-100 text-purple-800" },
-      "ready-for-pickup": { color: "bg-orange-100 text-orange-800" },
-      completed: { color: "bg-green-100 text-green-800" },
-      cancelled: { color: "bg-red-100 text-red-800" },
+      pending:    { color: "bg-yellow-100 text-yellow-700", label: "Pesanan Dibuat" },  
+      confirmed:  { color: "bg-blue-100 text-blue-700", label: "Pesanan Dikonfirmasi" },      
+      picked_up:  { color: "bg-indigo-100 text-indigo-700", label: "Dijemput" },  
+      in_process: { color: "bg-orange-100 text-orange-700", label: "Sedang Diproses" },  
+      ready:      { color: "bg-emerald-100 text-emerald-700", label: "Siap Diantar" },
+      delivered:  { color: "bg-lime-100 text-lime-700", label: "Selesai" },      
+      cancelled:  { color: "bg-gray-200 text-gray-600", label: "Dibatalkan" },      
     }
 
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig["pending"]
-    return <Badge className={config.color}>{status}</Badge>
+    return <Badge className={config.color}>{config.label}</Badge>
   }
 
   const getPaymentStatusBadge = (status: string) => {
     const statusConfig = {
-      pending: { color: "bg-yellow-100 text-yellow-800" },
-      paid: { color: "bg-green-100 text-green-800" },
-      failed: { color: "bg-red-100 text-red-800" },
-      cancelled: { color: "bg-gray-100 text-gray-800" },
+      pending: { color: "bg-yellow-100 text-yellow-800", label: "Menunggu Pembayaran" },
+      paid: { color: "bg-green-100 text-green-800", label: "Lunas" },
+      failed: { color: "bg-red-100 text-red-800", label: "Gagal"},
+      cancelled: { color: "bg-gray-100 text-gray-800", label: "Dibatalkan" },
     }
 
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig["pending"]
-    return <Badge className={config.color}>{status}</Badge>
+    return <Badge className={config.color}>{config.label}</Badge>
   }
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
@@ -402,13 +403,14 @@ export default function OrdersPage() {
                 <SelectValue placeholder="Filter Status Order" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Semua Status</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="confirmed">Confirmed</SelectItem>
-                <SelectItem value="in-progress">In Progress</SelectItem>
-                <SelectItem value="ready-for-pickup">Ready for Pickup</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
+              <SelectItem value="all">Semua Status</SelectItem>
+              <SelectItem value="pending">Pesanan Dibuat</SelectItem>
+              <SelectItem value="confirmed">Pesanan Dikonfirmasi</SelectItem>
+              <SelectItem value="picked_up">Dijemput</SelectItem>
+              <SelectItem value="in_process">Sedang Diproses</SelectItem>
+              <SelectItem value="ready">Siap Diantar</SelectItem>
+              <SelectItem value="delivered">Selesai</SelectItem>
+              <SelectItem value="cancelled">Dibatalkan</SelectItem>
               </SelectContent>
             </Select>
             <Select value={paymentStatusFilter} onValueChange={setPaymentStatusFilter}>
@@ -417,10 +419,10 @@ export default function OrdersPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Semua Status</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="paid">Paid</SelectItem>
-                <SelectItem value="failed">Failed</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
+                <SelectItem value="pending">Menunggu Pembayaran</SelectItem>
+                <SelectItem value="paid">Lunas</SelectItem>
+                <SelectItem value="failed">Gagal</SelectItem>
+                <SelectItem value="cancelled">Dibatalkan</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -582,12 +584,13 @@ export default function OrdersPage() {
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="pending">Pending</SelectItem>
-                                    <SelectItem value="confirmed">Confirmed</SelectItem>
-                                    <SelectItem value="in-progress">In Progress</SelectItem>
-                                    <SelectItem value="ready-for-pickup">Ready for Pickup</SelectItem>
-                                    <SelectItem value="completed">Completed</SelectItem>
-                                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                                    <SelectItem value="pending">Pesanan Dibuat</SelectItem>
+                                    <SelectItem value="confirmed">Pesanan Dikonfirmasi</SelectItem>
+                                    <SelectItem value="picked_up">Dijemput</SelectItem>
+                                    <SelectItem value="in_process">Sedang Diproses</SelectItem>
+                                    <SelectItem value="ready">Siap Diantar</SelectItem>
+                                    <SelectItem value="delivered">Selesai</SelectItem>
+                                    <SelectItem value="cancelled">Dibatalkan</SelectItem>
                                   </SelectContent>
                                 </Select>
 
@@ -600,10 +603,10 @@ export default function OrdersPage() {
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="pending">Pending</SelectItem>
-                                    <SelectItem value="paid">Paid</SelectItem>
-                                    <SelectItem value="failed">Failed</SelectItem>
-                                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                                    <SelectItem value="pending">Menunggu Pembayaran</SelectItem>
+                                    <SelectItem value="paid">Lunas</SelectItem>
+                                    <SelectItem value="failed">Gagal</SelectItem>
+                                    <SelectItem value="cancelled">Dibatalkan</SelectItem>
                                   </SelectContent>
                                 </Select>
 

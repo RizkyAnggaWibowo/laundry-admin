@@ -67,7 +67,7 @@ export default function LoginPage() {
               className="bg-[#0F4C75] text-white px-6 py-3 rounded-lg flex items-center justify-center"
               style={{ width: "290.42px", height: "64.3px" }}
             >
-              <h1 className="text-xl font-bold">Laundry Biner Admin</h1>
+              <h1 className="text-xl font-bold">Laundry nan Admin</h1>
             </div>
           </div>
           <CardTitle className="text-2xl font-bold text-[#0F4C75]">Login Admin</CardTitle>
