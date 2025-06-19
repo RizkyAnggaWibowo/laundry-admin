@@ -32,13 +32,18 @@ interface Order {
   total_amount: number
   pickup_date: string
   pickup_time: string
+  delivery_date: string | null
+  delivery_time: string | null
+  delivery_address: string | null
+  pickup_option: 'pickup' | 'dropoff'
+  delivery_option: 'delivery' | 'selfpickup'
   customer_name: string
   customer_phone: string
   customer_email: string | null
   pickup_address: string
   notes: string | null
-  status: string
-  payment_status: string
+  status: 'pending' | 'confirmed' | 'picked_up' | 'in_process' | 'ready' | 'delivered' | 'cancelled' | 'pending_cancellation'
+  payment_status: 'pending' | 'paid' | 'settlement' | 'failed' | 'cancelled' | 'expired'
   midtrans_transaction_id: string | null
   midtrans_order_id: string | null
   created_at: string
@@ -46,17 +51,18 @@ interface Order {
   service_types?: {
     name: string
     description: string | null
-    price_per_kg: number | null
-    price_per_item: number | null
+    type: 'kiloan' | 'satuan'
+    price: number
   }
 }
 
 interface ServiceType {
   id: string
   name: string
+  type: 'kiloan' | 'satuan'
+  price: number
   description: string | null
-  price_per_kg: number | null
-  price_per_item: number | null
+  is_active: boolean
 }
 
 export default function OrdersPage() {
@@ -171,40 +177,38 @@ export default function OrdersPage() {
     // Prioritas: dari join result, lalu dari manual lookup, terakhir fallback
     if (order.service_types?.name) {
       return order.service_types.name
-    }
-
-    const serviceType = serviceTypes.find((st) => st.id === order.service_type_id)
+    }    const serviceType = serviceTypes.find((st) => st.id === order.service_type_id)
     return serviceType?.name || "Unknown Service"
   }
-
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      pending:    { color: "bg-yellow-100 text-yellow-700", label: "Pesanan Dibuat" },  
-      confirmed:  { color: "bg-blue-100 text-blue-700", label: "Pesanan Dikonfirmasi" },      
-      picked_up:  { color: "bg-indigo-100 text-indigo-700", label: "Dijemput" },  
-      in_process: { color: "bg-orange-100 text-orange-700", label: "Sedang Diproses" },  
-      ready:      { color: "bg-emerald-100 text-emerald-700", label: "Siap Diantar" },
-      delivered:  { color: "bg-lime-100 text-lime-700", label: "Selesai" },      
-      cancelled:  { color: "bg-gray-200 text-gray-600", label: "Dibatalkan" },      
+      pending:             { color: "bg-yellow-100 text-yellow-700", label: "Pesanan Dibuat" },  
+      confirmed:           { color: "bg-blue-100 text-blue-700", label: "Pesanan Dikonfirmasi" },      
+      picked_up:           { color: "bg-indigo-100 text-indigo-700", label: "Dijemput" },  
+      in_process:          { color: "bg-orange-100 text-orange-700", label: "Sedang Diproses" },  
+      ready:               { color: "bg-emerald-100 text-emerald-700", label: "Siap Diantar" },
+      delivered:           { color: "bg-lime-100 text-lime-700", label: "Selesai" },      
+      cancelled:           { color: "bg-gray-200 text-gray-600", label: "Dibatalkan" },
+      pending_cancellation: { color: "bg-red-100 text-red-700 font-semibold border border-red-300", label: "Menunggu Pembatalan" },      
     }
 
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig["pending"]
     return <Badge className={config.color}>{config.label}</Badge>
   }
-
   const getPaymentStatusBadge = (status: string) => {
     const statusConfig = {
-      pending: { color: "bg-yellow-100 text-yellow-800", label: "Menunggu Pembayaran" },
-      paid: { color: "bg-green-100 text-green-800", label: "Lunas" },
-      failed: { color: "bg-red-100 text-red-800", label: "Gagal"},
-      cancelled: { color: "bg-gray-100 text-gray-800", label: "Dibatalkan" },
+      pending:    { color: "bg-yellow-100 text-yellow-800", label: "Menunggu Pembayaran" },
+      paid:       { color: "bg-green-100 text-green-800", label: "Lunas" },
+      settlement: { color: "bg-blue-100 text-blue-800", label: "Settlement" },
+      failed:     { color: "bg-red-100 text-red-800", label: "Gagal"},
+      cancelled:  { color: "bg-gray-100 text-gray-800", label: "Dibatalkan" },
+      expired:    { color: "bg-orange-100 text-orange-800", label: "Kedaluwarsa" },
     }
 
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig["pending"]
     return <Badge className={config.color}>{config.label}</Badge>
   }
-
-  const updateOrderStatus = async (orderId: string, newStatus: string) => {
+  const updateOrderStatus = async (orderId: string, newStatus: Order['status']) => {
     try {
       setUpdating(true)
 
@@ -240,7 +244,7 @@ export default function OrdersPage() {
     }
   }
 
-  const updatePaymentStatus = async (orderId: string, newPaymentStatus: string) => {
+  const updatePaymentStatus = async (orderId: string, newPaymentStatus: Order['payment_status']) => {
     try {
       setUpdating(true)
 
@@ -401,8 +405,7 @@ export default function OrdersPage() {
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Filter Status Order" />
-              </SelectTrigger>
-              <SelectContent>
+              </SelectTrigger>              <SelectContent>
               <SelectItem value="all">Semua Status</SelectItem>
               <SelectItem value="pending">Pesanan Dibuat</SelectItem>
               <SelectItem value="confirmed">Pesanan Dikonfirmasi</SelectItem>
@@ -411,18 +414,20 @@ export default function OrdersPage() {
               <SelectItem value="ready">Siap Diantar</SelectItem>
               <SelectItem value="delivered">Selesai</SelectItem>
               <SelectItem value="cancelled">Dibatalkan</SelectItem>
+              <SelectItem value="pending_cancellation">Menunggu Pembatalan</SelectItem>
               </SelectContent>
             </Select>
             <Select value={paymentStatusFilter} onValueChange={setPaymentStatusFilter}>
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Filter Status Pembayaran" />
-              </SelectTrigger>
-              <SelectContent>
+              </SelectTrigger>              <SelectContent>
                 <SelectItem value="all">Semua Status</SelectItem>
                 <SelectItem value="pending">Menunggu Pembayaran</SelectItem>
                 <SelectItem value="paid">Lunas</SelectItem>
+                <SelectItem value="settlement">Settlement</SelectItem>
                 <SelectItem value="failed">Gagal</SelectItem>
                 <SelectItem value="cancelled">Dibatalkan</SelectItem>
+                <SelectItem value="expired">Kedaluwarsa</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -452,7 +457,13 @@ export default function OrdersPage() {
             </TableHeader>
             <TableBody>
               {orders.map((order) => (
-                <TableRow key={order.id}>
+                <TableRow 
+                  key={order.id}
+                  className={order.status === 'pending_cancellation' 
+                    ? "bg-red-50 border-l-4 border-l-red-400" 
+                    : ""
+                  }
+                >
                   <TableCell className="font-medium">{order.order_number}</TableCell>
                   <TableCell>
                     <div>
@@ -574,16 +585,14 @@ export default function OrdersPage() {
                                 </div>
                               )}
 
-                              <div className="flex gap-2 flex-wrap">
-                                <Select
+                              <div className="flex gap-2 flex-wrap">                                <Select
                                   defaultValue={selectedOrder.status}
-                                  onValueChange={(value) => updateOrderStatus(selectedOrder.id, value)}
+                                  onValueChange={(value) => updateOrderStatus(selectedOrder.id, value as Order['status'])}
                                   disabled={updating}
                                 >
                                   <SelectTrigger className="w-[200px]">
                                     <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
+                                  </SelectTrigger>                                  <SelectContent>
                                     <SelectItem value="pending">Pesanan Dibuat</SelectItem>
                                     <SelectItem value="confirmed">Pesanan Dikonfirmasi</SelectItem>
                                     <SelectItem value="picked_up">Dijemput</SelectItem>
@@ -591,22 +600,22 @@ export default function OrdersPage() {
                                     <SelectItem value="ready">Siap Diantar</SelectItem>
                                     <SelectItem value="delivered">Selesai</SelectItem>
                                     <SelectItem value="cancelled">Dibatalkan</SelectItem>
+                                    <SelectItem value="pending_cancellation">Menunggu Pembatalan</SelectItem>
                                   </SelectContent>
-                                </Select>
-
-                                <Select
+                                </Select>                                <Select
                                   defaultValue={selectedOrder.payment_status}
-                                  onValueChange={(value) => updatePaymentStatus(selectedOrder.id, value)}
+                                  onValueChange={(value) => updatePaymentStatus(selectedOrder.id, value as Order['payment_status'])}
                                   disabled={updating}
                                 >
                                   <SelectTrigger className="w-[200px]">
                                     <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
+                                  </SelectTrigger>                                  <SelectContent>
                                     <SelectItem value="pending">Menunggu Pembayaran</SelectItem>
                                     <SelectItem value="paid">Lunas</SelectItem>
+                                    <SelectItem value="settlement">Settlement</SelectItem>
                                     <SelectItem value="failed">Gagal</SelectItem>
                                     <SelectItem value="cancelled">Dibatalkan</SelectItem>
+                                    <SelectItem value="expired">Kedaluwarsa</SelectItem>
                                   </SelectContent>
                                 </Select>
 

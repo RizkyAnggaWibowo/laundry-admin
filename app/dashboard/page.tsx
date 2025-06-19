@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Package, DollarSign, Clock, CheckCircle } from "lucide-react"
+import { Package, DollarSign, Clock, CheckCircle, AlertTriangle } from "lucide-react"
 import { supabase } from "@/lib/supabase"
+import { useRouter } from "next/navigation"
 
 const formatRupiah = (n?: number | null) => (n ?? 0).toLocaleString("id-ID")
 
@@ -14,8 +16,8 @@ interface Order {
   order_number: string
   customer_name: string
   total_amount: number
-  status: string
-  payment_status: string
+  status: 'pending' | 'confirmed' | 'picked_up' | 'in_process' | 'ready' | 'delivered' | 'cancelled' | 'pending_cancellation'
+  payment_status: 'pending' | 'paid' | 'settlement' | 'failed' | 'cancelled' | 'expired'
   created_at: string
   service_types?: {
     name: string
@@ -27,14 +29,17 @@ interface DashboardStats {
   completedOrders: number
   totalRevenue: number
   pendingOrders: number
+  pendingCancellations: number
 }
 
 export default function DashboardPage() {
+  const router = useRouter()
   const [stats, setStats] = useState<DashboardStats>({
     totalOrders: 0,
     completedOrders: 0,
     totalRevenue: 0,
     pendingOrders: 0,
+    pendingCancellations: 0,
   })
   const [recentOrders, setRecentOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
@@ -73,36 +78,36 @@ export default function DashboardPage() {
 
         if (plainErr) throw plainErr
         orders = plainOrders
-      }
-
-      /* ---------- hitung statistik ---------- */
+      }      /* ---------- hitung statistik ---------- */
       const totalOrders = orders?.length || 0
-      const completedOrders = orders?.filter((o) => o.status === "completed").length || 0
+      const completedOrders = orders?.filter((o) => o.status === "delivered").length || 0
       const pendingOrders = orders?.filter((o) => o.status === "pending").length || 0
+      const pendingCancellations = orders?.filter((o) => o.status === "pending_cancellation").length || 0
       const totalRevenue =
         orders?.filter((o) => o.payment_status === "paid").reduce((sum, o) => sum + o.total_amount, 0) || 0
 
-      setStats({ totalOrders, completedOrders, totalRevenue, pendingOrders })
+      setStats({ totalOrders, completedOrders, totalRevenue, pendingOrders, pendingCancellations })
       setRecentOrders(orders?.slice(0, 5) || [])
     } catch (err) {
-      console.error("Error fetching dashboard data:", err)
-    } finally {
+      console.error("Error fetching dashboard data:", err)    } finally {
       setLoading(false)
     }
   }
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      pending: { color: "bg-yellow-100 text-yellow-800" },
-      confirmed: { color: "bg-blue-100 text-blue-800" },
-      "in-progress": { color: "bg-purple-100 text-purple-800" },
-      "ready-for-pickup": { color: "bg-orange-100 text-orange-800" },
-      completed: { color: "bg-green-100 text-green-800" },
-      cancelled: { color: "bg-red-100 text-red-800" },
+      pending: { color: "bg-yellow-100 text-yellow-800", label: "pending" },
+      confirmed: { color: "bg-blue-100 text-blue-800", label: "confirmed" },
+      picked_up: { color: "bg-indigo-100 text-indigo-800", label: "picked_up" },
+      in_process: { color: "bg-purple-100 text-purple-800", label: "in_process" },
+      ready: { color: "bg-orange-100 text-orange-800", label: "ready" },
+      delivered: { color: "bg-green-100 text-green-800", label: "delivered" },
+      cancelled: { color: "bg-gray-100 text-gray-800", label: "cancelled" },
+      pending_cancellation: { color: "bg-red-100 text-red-700 font-semibold border border-red-300", label: "pending_cancellation" },
     }
 
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig["pending"]
-    return <Badge className={config.color}>{status}</Badge>
+    return <Badge className={config.color}>{config.label}</Badge>
   }
 
   if (loading) {
@@ -121,10 +126,8 @@ export default function DashboardPage() {
           <h1 className="text-3xl font-bold text-[#0F4C75]">Dashboard</h1>
           <p className="text-muted-foreground">Ringkasan operasional laundry hari ini</p>
         </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      </div>      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Order Hari Ini</CardTitle>
@@ -170,6 +173,31 @@ export default function DashboardPage() {
             <div className="text-2xl font-bold text-orange-600">{stats.pendingOrders}</div>
             <p className="text-xs text-muted-foreground">Perlu tindak lanjut</p>
           </CardContent>
+        </Card>        {/* Card khusus untuk request cancel */}
+        <Card className={`border-2 ${stats.pendingCancellations > 0 ? 'border-red-400 bg-red-50' : 'border-gray-200'}`}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className={`text-sm font-medium ${stats.pendingCancellations > 0 ? 'text-red-700' : ''}`}>
+              Request Cancel
+            </CardTitle>
+            <AlertTriangle className={`h-4 w-4 ${stats.pendingCancellations > 0 ? 'text-red-500' : 'text-muted-foreground'}`} />
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className={`text-2xl font-bold ${stats.pendingCancellations > 0 ? 'text-red-600' : 'text-gray-600'}`}>
+              {stats.pendingCancellations}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {stats.pendingCancellations > 0 ? 'Perlu ditinjau' : 'Tidak ada request'}
+            </p>
+            {stats.pendingCancellations > 0 && (
+              <Button 
+                size="sm" 
+                className="w-full bg-red-600 hover:bg-red-700 text-white"
+                onClick={() => router.push('/dashboard/orders?filter=pending_cancellation')}
+              >
+                Lihat Detail
+              </Button>
+            )}
+          </CardContent>
         </Card>
       </div>
 
@@ -192,9 +220,14 @@ export default function DashboardPage() {
                   <TableHead>Tanggal</TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody>
-                {recentOrders.map((order) => (
-                  <TableRow key={order.id}>
+              <TableBody>{recentOrders.map((order) => (
+                  <TableRow 
+                    key={order.id}
+                    className={order.status === 'pending_cancellation' 
+                      ? "bg-red-50 border-l-4 border-l-red-400" 
+                      : ""
+                    }
+                  >
                     <TableCell className="font-medium">{order.order_number}</TableCell>
                     <TableCell>{order.customer_name}</TableCell>
                     <TableCell>{order.service_types?.name || "Unknown Service"}</TableCell>
