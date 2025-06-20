@@ -26,7 +26,7 @@ interface Payment {
   created_at: string
   amount: number
   method: string
-  status: string
+  status: 'Pending' | 'Verified' | 'Rejected'
   midtrans_transaction_id: string | null
   midtrans_payment_type: string | null
   proof_url: string | null
@@ -116,7 +116,6 @@ export default function PaymentsPage() {
       setLoading(false)
     }
   }
-
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       Pending: { color: "bg-yellow-100 text-yellow-800", icon: Clock },
@@ -341,8 +340,7 @@ export default function PaymentsPage() {
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Filter Status" />
-              </SelectTrigger>
-              <SelectContent>
+              </SelectTrigger>              <SelectContent>
                 <SelectItem value="all">Semua Status</SelectItem>
                 <SelectItem value="Pending">Pending</SelectItem>
                 <SelectItem value="Verified">Verified</SelectItem>

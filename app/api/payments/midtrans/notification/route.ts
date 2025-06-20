@@ -14,10 +14,8 @@ export async function POST(request: NextRequest) {
 
     if (!isValidSignature) {
       return NextResponse.json({ success: false, message: "Invalid signature" }, { status: 400 })
-    }
-
-    // Update payment status based on transaction status
-    let paymentStatus = "Pending"
+    }    // Update payment status based on transaction status
+    let paymentStatus: 'Pending' | 'Verified' | 'Rejected' = "Pending"
 
     if (transaction_status === "capture" || transaction_status === "settlement") {
       paymentStatus = "Verified"
