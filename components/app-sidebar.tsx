@@ -27,6 +27,7 @@ import {
   ChevronUp,
   User2,
 } from "lucide-react"
+import Image from "next/image"
 
 const menuItems = [
   {
@@ -38,36 +39,6 @@ const menuItems = [
     title: "Manajemen Order",
     url: "/dashboard/orders",
     icon: Package,
-  },
-  {
-    title: "Pembayaran",
-    url: "/dashboard/payments",
-    icon: CreditCard,
-  },
-  {
-    title: "Data Pelanggan",
-    url: "/dashboard/customers",
-    icon: Users,
-  },
-  {
-    title: "Pengaturan Layanan",
-    url: "/dashboard/services",
-    icon: Settings,
-  },
-  {
-    title: "Laporan",
-    url: "/dashboard/reports",
-    icon: FileText,
-  },
-  {
-    title: "Feedback Pelanggan",
-    url: "/dashboard/feedback",
-    icon: MessageSquare,
-  },
-  {
-    title: "Manajemen Pegawai",
-    url: "/dashboard/employees",
-    icon: UserCog,
   },
 ]
 
@@ -84,12 +55,14 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader>
         <div className="flex items-center gap-2 px-2 py-4">
-          <div
-            className="bg-[#0F4C75] text-white px-4 py-2 rounded-lg flex items-center justify-center text-sm font-bold"
-            style={{ minWidth: "200px", height: "40px" }}
-          >
-            Laundry Biner Admin
-          </div>
+          <Image
+            src="/logo-laundry.jpg"
+            alt="Laundry Biner Logo"
+            width={200}
+            height={40}
+            className="rounded-lg"
+            style={{ objectFit: "contain", background: "#0F4C75" }}
+          />
         </div>
       </SidebarHeader>
 
