@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import Image from "next/image"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -63,12 +64,16 @@ export default function LoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <div
-              className="bg-[#0F4C75] text-white px-6 py-3 rounded-lg flex items-center justify-center"
-              style={{ width: "290.42px", height: "64.3px" }}
-            >
-              <h1 className="text-xl font-bold">Laundry nan Admin</h1>
-            </div>
+            <div className="flex items-center gap-2 px-2 py-4">
+                <Image
+                  src="/logo-laundry.jpg"
+                  alt="Laundry Biner Logo"
+                  width={200}
+                  height={40}
+                  className="rounded-lg"
+                  style={{ objectFit: "contain", background: "#0F4C75" }}
+                />
+              </div>
           </div>
           <CardTitle className="text-2xl font-bold text-[#0F4C75]">Login Admin</CardTitle>
           <CardDescription>Masuk ke panel admin untuk mengelola operasional laundry</CardDescription>
@@ -115,7 +120,11 @@ export default function LoginPage() {
               </Alert>
             )}
 
-            <Button type="submit" className="w-full bg-[#0F4C75] hover:bg-[#0F4C75]/90" disabled={isLoading}>
+            <Button
+              type="submit"
+              className="w-full bg-[#0F4C75] hover:bg-[#0F4C75]/90 text-white"
+              disabled={isLoading}
+            >
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -126,12 +135,6 @@ export default function LoginPage() {
               )}
             </Button>
           </form>
-
-          <div className="mt-4 text-center text-sm text-gray-600">
-            <p>Demo credentials:</p>
-            <p>Email: admin@laundrybiner.com</p>
-            <p>Password: admin123</p>
-          </div>
         </CardContent>
       </Card>
     </div>
